@@ -58,12 +58,115 @@ require "fileutils"
 print "unlinking..\n";
 begin
   FileUtils.rm_rf("polygons")
+  FileUtils.rm_rf("cities")
+  FileUtils.rm_rf("prefs")  
 rescue
 end
 print "unlinking done\n";
 Dir.mkdir("polygons")
+Dir.mkdir("cities")
+Dir.mkdir("prefs")
 
-log_of=File.open("geojson_keycodes_phl.sql","w")
+
+
+#
+# Munincipalities
+#
+
+log_of=File.open("cities_phl.sql","w")
+json=File.open("Munincipalities.json").read()
+o=JSON.parse(json)
+
+lat0_h={}
+lat1_h={}
+lng0_h={}
+lng1_h={}
+info_h={}
+features = o["features"]
+
+features.each do |ft|
+  next if ft["type"]!="Feature"
+  props = ft["properties"]
+  city = props["ADM3_PCODE"][4..5]
+  pref = props["ADM2_PCODE"].sub("PH","")[0..3].to_i #   "PH015500000" > "015500000" > "0155"
+  prefname = props["ADM2_EN"].sub("'","\\'") # "Pangasinan"
+  cityname = props["ADM3_EN"].sub("'","\\'") # "Aguilar"
+      
+  geom = ft["geometry"]
+  if geom["type"]!="Polygon" and geom["type"]!="MultiPolygon" then
+    print "invalid type: ",geom["type"],"\n"
+    exit(0)
+    next
+  end
+  multi=false
+  multi=true if geom["type"]=="MultiPolygon"
+
+  coords = geom["coordinates"]
+  # 緯度経度の範囲を事前計算
+
+  if multi then
+    lng0,lat0=coords[0][0][0]
+    lng1,lat1=coords[0][0][0]    
+    coords_ary=coords
+  else
+    lng0,lat0=coords[0][0]
+    lng1,lat1=coords[0][0]
+    coords_ary=[coords]
+  end
+  coords_ary.each do |list|
+    list.each do |coordset| # 飛び地があるので配列になっているんだろう. coordsetは [lng,lat]の配列
+      coordset.each do |coord|
+        lng0=coord[0] if coord[0] < lng0
+        lat0=coord[1] if coord[1] < lat0
+        lng1=coord[0] if coord[0] > lng1
+        lat1=coord[1] if coord[1] > lat1
+      end
+    end    
+  end
+  lat0_h[city]=lat0 if !lat0_h[city]
+  lng0_h[city]=lng0 if !lng0_h[city]
+  lat1_h[city]=lat1 if !lat1_h[city]
+  lng1_h[city]=lng1 if !lng1_h[city]
+  lat0_h[city]=lat0 if lat0<lat0_h[city]
+  lng0_h[city]=lng0 if lng0<lng0_h[city]
+  lat1_h[city]=lat1 if lat1>lat1_h[city]
+  lng1_h[city]=lng1 if lng1>lng1_h[city]      
+
+  info_h[city]=[pref,city,prefname,cityname]
+
+  print "city=#{city} pref=#{pref} cityname=#{cityname} prefname=#{prefname}\n"
+  path="cities/#{city}.json" 
+  json = JSON.generate(coords) # array of array of [lng,lat]
+  File.open(path,"w") do |f| f.write(json) end
+
+end
+
+info_h.keys.each do |keycode|
+  ary=info_h[keycode]
+  pref,city,prefname,cityname=ary
+  lat0=lat0_h[city]
+  lng0=lng0_h[city]
+  lat1=lat1_h[city]
+  lng1=lng1_h[city]
+  center_lat=(lat0+lat1)/2.0
+  center_lng=(lng0+lng1)/2.0
+  log_of.print("insert into cities set country_iso='PHL',pref=#{pref},city=#{city},cityname='#{cityname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
+end
+
+
+
+
+
+
+
+
+exit(0)
+
+#
+# Barangays
+#
+
+log_of=File.open("polygons_phl.sql","w")
 
 json=File.open("Barangays.json").read()
 o=JSON.parse(json)
@@ -152,9 +255,4 @@ info_h.keys.each do |keycode|
   center_lng=(lng0+lng1)/2.0
   log_of.print("insert into polygons set id='#{id}',country_iso='PHL',keycode=#{keycode},pref=#{pref},city=#{city},kihon=#{kihon},cityname='#{cityname}',prefname='#{prefname}',sname='#{sname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
 end
-
-
-
-
-
 
