@@ -68,6 +68,88 @@ Dir.mkdir("cities")
 Dir.mkdir("prefs")
 
 
+#
+# Province
+#
+
+log_of=File.open("prefs_phl.sql","w")
+json=File.open("Provinces.json").read()
+o=JSON.parse(json)
+
+lat0_h={}
+lat1_h={}
+lng0_h={}
+lng1_h={}
+info_h={}
+features = o["features"]
+
+features.each do |ft|
+  next if ft["type"]!="Feature"
+  props = ft["properties"]
+  pref = props["ADM2_PCODE"].sub("PH","")[0..3].to_i #   "PH015500000" > "015500000" > "0155"
+  prefname = props["ADM2_EN"].sub("'","\\'") # "Pangasinan"
+      
+  geom = ft["geometry"]
+  if geom["type"]!="Polygon" and geom["type"]!="MultiPolygon" then
+    print "invalid type: ",geom["type"],"\n"
+    exit(0)
+    next
+  end
+  multi=false
+  multi=true if geom["type"]=="MultiPolygon"
+
+  coords = geom["coordinates"]
+  # 緯度経度の範囲を事前計算
+
+  if multi then
+    lng0,lat0=coords[0][0][0]
+    lng1,lat1=coords[0][0][0]    
+    coords_ary=coords
+  else
+    lng0,lat0=coords[0][0]
+    lng1,lat1=coords[0][0]
+    coords_ary=[coords]
+  end
+  coords_ary.each do |list|
+    list.each do |coordset| # 飛び地があるので配列になっているんだろう. coordsetは [lng,lat]の配列
+      coordset.each do |coord|
+        lng0=coord[0] if coord[0] < lng0
+        lat0=coord[1] if coord[1] < lat0
+        lng1=coord[0] if coord[0] > lng1
+        lat1=coord[1] if coord[1] > lat1
+      end
+    end    
+  end
+  lat0_h[pref]=lat0 if !lat0_h[pref]
+  lng0_h[pref]=lng0 if !lng0_h[pref]
+  lat1_h[pref]=lat1 if !lat1_h[pref]
+  lng1_h[pref]=lng1 if !lng1_h[pref]
+  lat0_h[pref]=lat0 if lat0<lat0_h[pref]
+  lng0_h[pref]=lng0 if lng0<lng0_h[pref]
+  lat1_h[pref]=lat1 if lat1>lat1_h[pref]
+  lng1_h[pref]=lng1 if lng1>lng1_h[pref]      
+
+  info_h[pref]=[pref,prefname]
+
+  print "pref=#{pref} prefname=#{prefname}\n"
+  path="prefs/#{pref}.json" 
+  json = JSON.generate(coords) # array of array of [lng,lat]
+  File.open(path,"w") do |f| f.write(json) end
+
+end
+
+info_h.keys.each do |code|
+  ary=info_h[code]
+  pref,prefname=ary
+  lat0=lat0_h[pref]
+  lng0=lng0_h[pref]
+  lat1=lat1_h[pref]
+  lng1=lng1_h[pref]
+  center_lat=(lat0+lat1)/2.0
+  center_lng=(lng0+lng1)/2.0
+  log_of.print("insert into prefs set country_iso='PHL',pref=#{pref},name='#{prefname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
+end
+
 
 #
 # Munincipalities
@@ -150,17 +232,9 @@ info_h.keys.each do |keycode|
   lng1=lng1_h[city]
   center_lat=(lat0+lat1)/2.0
   center_lng=(lng0+lng1)/2.0
-  log_of.print("insert into cities set country_iso='PHL',pref=#{pref},city=#{city},cityname='#{cityname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
+  log_of.print("insert into cities set country_iso='PHL',pref=#{pref},city=#{city},cityname='#{cityname}',jcode=0,lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
 end
 
-
-
-
-
-
-
-
-exit(0)
 
 #
 # Barangays
