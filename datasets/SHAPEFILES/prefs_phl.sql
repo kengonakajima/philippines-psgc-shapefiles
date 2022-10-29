@@ -1,3 +1,4 @@
+delete from prefs where country_iso='PHL';
 insert into prefs set country_iso='PHL',pref=1401,name='Abra',lat0=17.15525632500004,lng0=120.4677860270001,lat1=17.973635974000047,lng1=121.11711675200002,center_lat=17.564446149500043,center_lng=120.79245138950006;
 insert into prefs set country_iso='PHL',pref=1602,name='Agusan del Norte',lat0=8.694252990000052,lng0=125.20772470700001,lat1=9.467170705000058,lng1=125.76750946100003,center_lat=9.080711847500055,center_lng=125.48761708400002;
 insert into prefs set country_iso='PHL',pref=1603,name='Agusan del Sur',lat0=7.930862946000047,lng0=125.16978647600001,lat1=9.230010033000042,lng1=126.26338735500008,center_lat=8.580436489500045,center_lng=125.71658691550005;

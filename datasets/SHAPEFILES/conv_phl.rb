@@ -110,16 +110,25 @@ features.each do |ft|
     lng1,lat1=coords[0][0]
     coords_ary=[coords]
   end
+  out_coords_ary=[]
+  n=0
   coords_ary.each do |list|
+    out_list=[]
     list.each do |coordset| # 飛び地があるので配列になっているんだろう. coordsetは [lng,lat]の配列
+      out_coordset=[]
       coordset.each do |coord|
         lng0=coord[0] if coord[0] < lng0
         lat0=coord[1] if coord[1] < lat0
         lng1=coord[0] if coord[0] > lng1
         lat1=coord[1] if coord[1] > lat1
+        n+=1
+        out_coordset.push(coord) if n%20==0 
       end
-    end    
+      out_list.push(out_coordset)
+    end
+    out_coords_ary.push(out_list)
   end
+  print("N:",n)
   lat0_h[pref]=lat0 if !lat0_h[pref]
   lng0_h[pref]=lng0 if !lng0_h[pref]
   lat1_h[pref]=lat1 if !lat1_h[pref]
@@ -132,13 +141,18 @@ features.each do |ft|
   info_h[pref]=[pref,prefname]
 
   print "pref=#{pref} prefname=#{prefname}\n"
-  path="prefs/#{pref}.json" 
-  json = JSON.generate(coords) # array of array of [lng,lat]
+  path="prefs/#{pref}.json"
+  if multi then
+    json = JSON.generate(out_coords_ary) 
+  else
+    json = JSON.generate(out_coords_ary[0]) 
+  end
+
   File.open(path,"w") do |f| f.write(json) end
 
 end
 
-log_of.print("delete from prefs where country_iso='PHL'");
+log_of.print("delete from prefs where country_iso='PHL';\n");
 info_h.keys.each do |code|
   ary=info_h[code]
   pref,prefname=ary
@@ -150,6 +164,7 @@ info_h.keys.each do |code|
   center_lng=(lng0+lng1)/2.0
   log_of.print("insert into prefs set country_iso='PHL',pref=#{pref},name='#{prefname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
 end
+
 
 
 #
@@ -196,16 +211,26 @@ features.each do |ft|
     lng1,lat1=coords[0][0]
     coords_ary=[coords]
   end
+  out_coords_ary=[]
+  n=0
   coords_ary.each do |list|
+    out_list=[]
     list.each do |coordset| # 飛び地があるので配列になっているんだろう. coordsetは [lng,lat]の配列
+      out_coordset=[]
       coordset.each do |coord|
         lng0=coord[0] if coord[0] < lng0
         lat0=coord[1] if coord[1] < lat0
         lng1=coord[0] if coord[0] > lng1
         lat1=coord[1] if coord[1] > lat1
+        n+=1
+        out_coordset.push(coord) # if n%10==0 
       end
-    end    
+      out_list.push(out_coordset)
+    end
+    out_coords_ary.push(out_list)
   end
+  print("N:",n)        
+
   lat0_h[city]=lat0 if !lat0_h[city]
   lng0_h[city]=lng0 if !lng0_h[city]
   lat1_h[city]=lat1 if !lat1_h[city]
@@ -218,13 +243,18 @@ features.each do |ft|
   info_h[city]=[pref,city,prefname,cityname]
 
   print "city=#{city} pref=#{pref} cityname=#{cityname} prefname=#{prefname}\n"
-  path="cities/#{city}.json" 
-  json = JSON.generate(coords) # array of array of [lng,lat]
+  path="cities/#{city}.json"
+  if multi then
+    json = JSON.generate(out_coords_ary) 
+  else
+    json = JSON.generate(out_coords_ary[0]) 
+  end
+
   File.open(path,"w") do |f| f.write(json) end
 
 end
 
-log_of.print("delete from cities where country_iso='PHL'");
+log_of.print("delete from cities where country_iso='PHL';\n");
 info_h.keys.each do |keycode|
   ary=info_h[keycode]
   pref,city,prefname,cityname=ary
@@ -292,6 +322,9 @@ features.each do |ft|
   end
   coords_ary.each do |list|
     list.each do |coordset| # 飛び地があるので配列になっているんだろう. coordsetは [lng,lat]の配列
+      if coordset.size > 5000 then
+        print "SZ:",coordset.size,"\n"
+      end      
       coordset.each do |coord|
         lng0=coord[0] if coord[0] < lng0
         lat0=coord[1] if coord[1] < lat0
@@ -312,13 +345,19 @@ features.each do |ft|
   info_h[keycode]=[pref,city,kihon,prefname,cityname,sname]
 
   print "keycode=#{keycode} pref=#{pref} city=#{city} kihon=#{kihon} prefname=#{prefname} cityname=#{cityname} sname=#{sname}\n"
-  path="polygons/#{keycode}.json" 
+  path="polygons/#{keycode}.json"
+  if multi then
+    json = JSON.generate(coords_ary) 
+  else
+    json = JSON.generate(coords_ary[0]) 
+  end
+          
   json = JSON.generate(coords) # array of array of [lng,lat]
   File.open(path,"w") do |f| f.write(json) end
 
 end
 
-log_of.print("delete from polygons where country_iso='PHL'");
+log_of.print("delete from polygons where country_iso='PHL';\n");
 info_h.keys.each do |keycode|
   ary=info_h[keycode]
   pref,city,kihon,prefname,cityname,sname=ary

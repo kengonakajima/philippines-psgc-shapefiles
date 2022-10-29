@@ -1,3 +1,4 @@
+delete from cities where country_iso='PHL';
 insert into cities set country_iso='PHL',pref=128,city=12801,cityname='Adams',jcode=0,lat0=18.37693302100007,lng0=120.87035669500005,lat1=18.518382190000068,lng1=120.96914518300002,center_lat=18.44765760550007,center_lng=120.91975093900004;
 insert into cities set country_iso='PHL',pref=128,city=12802,cityname='Bacarra',jcode=0,lat0=18.223549262000063,lng0=120.56214031500008,lat1=18.296504215000027,lng1=120.66821351300007,center_lat=18.260026738500045,center_lng=120.61517691400007;
 insert into cities set country_iso='PHL',pref=128,city=12803,cityname='Badoc',jcode=0,lat0=17.834870462000026,lng0=120.42925503000004,lat1=17.980032090000066,lng1=120.5878735330001,center_lat=17.907451276000046,center_lng=120.50856428150007;
