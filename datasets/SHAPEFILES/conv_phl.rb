@@ -138,6 +138,7 @@ features.each do |ft|
 
 end
 
+log_of.print("delete from prefs where country_iso='PHL'");
 info_h.keys.each do |code|
   ary=info_h[code]
   pref,prefname=ary
@@ -169,8 +170,8 @@ features = o["features"]
 features.each do |ft|
   next if ft["type"]!="Feature"
   props = ft["properties"]
-  city = props["ADM3_PCODE"][4..5]
   pref = props["ADM2_PCODE"].sub("PH","")[0..3].to_i #   "PH015500000" > "015500000" > "0155"
+  city = props["ADM3_PCODE"].sub("PH","")[0..5].to_i
   prefname = props["ADM2_EN"].sub("'","\\'") # "Pangasinan"
   cityname = props["ADM3_EN"].sub("'","\\'") # "Aguilar"
       
@@ -223,6 +224,7 @@ features.each do |ft|
 
 end
 
+log_of.print("delete from cities where country_iso='PHL'");
 info_h.keys.each do |keycode|
   ary=info_h[keycode]
   pref,city,prefname,cityname=ary
@@ -316,7 +318,7 @@ features.each do |ft|
 
 end
 
-
+log_of.print("delete from polygons where country_iso='PHL'");
 info_h.keys.each do |keycode|
   ary=info_h[keycode]
   pref,city,kihon,prefname,cityname,sname=ary
