@@ -273,7 +273,7 @@ end
 #
 
 log_of=File.open("polygons_phl.sql","w")
-
+log_of_pm=File.open("perimeter_only.sql","w")
 json=File.open("Barangays.json").read()
 o=JSON.parse(json)
 
@@ -298,7 +298,8 @@ features.each do |ft|
   prefname = props["ADM2_EN"].sub("'","\\'") # "Pangasinan"
   cityname = props["ADM3_EN"].sub("'","\\'") # "Aguilar"
   sname = props["ADM4_EN"].sub("'","\\'") # "Pogomboa"
-      
+  perimeter = props["PERIMETER"].to_f
+        
   geom = ft["geometry"]
   if geom["type"]!="Polygon" and geom["type"]!="MultiPolygon" then
     print "invalid type: ",geom["type"],"\n"
@@ -342,9 +343,9 @@ features.each do |ft|
   lat1_h[keycode]=lat1 if lat1>lat1_h[keycode]
   lng1_h[keycode]=lng1 if lng1>lng1_h[keycode]      
 
-  info_h[keycode]=[pref,city,kihon,prefname,cityname,sname]
+  info_h[keycode]=[pref,city,kihon,prefname,cityname,sname,perimeter]
 
-  print "keycode=#{keycode} pref=#{pref} city=#{city} kihon=#{kihon} prefname=#{prefname} cityname=#{cityname} sname=#{sname}\n"
+  print "keycode=#{keycode} pref=#{pref} city=#{city} kihon=#{kihon} prefname=#{prefname} cityname=#{cityname} sname=#{sname} perimeter=#{perimeter}\n"
   path="polygons/#{keycode}.json"
   if multi then
     json = JSON.generate(coords_ary) 
@@ -360,7 +361,7 @@ end
 log_of.print("delete from polygons where country_iso='PHL';\n");
 info_h.keys.each do |keycode|
   ary=info_h[keycode]
-  pref,city,kihon,prefname,cityname,sname=ary
+  pref,city,kihon,prefname,cityname,sname,perimeter=ary
   id="PHL.#{pref}.#{city}.#{kihon}"
   lat0=lat0_h[keycode]
   lng0=lng0_h[keycode]
@@ -368,6 +369,7 @@ info_h.keys.each do |keycode|
   lng1=lng1_h[keycode]
   center_lat=(lat0+lat1)/2.0
   center_lng=(lng0+lng1)/2.0
-  log_of.print("insert into polygons set id='#{id}',country_iso='PHL',keycode=#{keycode},pref=#{pref},city=#{city},kihon=#{kihon},cityname='#{cityname}',prefname='#{prefname}',sname='#{sname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng};\n")
+  log_of.print("insert into polygons set id='#{id}',country_iso='PHL',keycode=#{keycode},pref=#{pref},city=#{city},kihon=#{kihon},cityname='#{cityname}',prefname='#{prefname}',sname='#{sname}',lat0=#{lat0},lng0=#{lng0},lat1=#{lat1},lng1=#{lng1},center_lat=#{center_lat},center_lng=#{center_lng},perimeter=#{perimeter};\n")
+  log_of_pm.print("update polygons set perimeter=#{perimeter} where country_iso='PHL' and keycode=#{keycode};\n")        
 end
 
